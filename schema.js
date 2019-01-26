@@ -30,6 +30,7 @@ const User = new GraphQLObjectType({
         stories:{
             type: new GraphQLList(Story),
             resolve:(parent,args)=>{
+                console.log('step User123');
                 return userModel.getAllStory(parent.id);
             }
         }
@@ -81,12 +82,14 @@ const Query = new GraphQLObjectType({
                     }
                 },
                 resolve: (parent,{id})=>{
+                    console.log('step user');
                     return userModel.getById(id);
                 }
             },
             viewer :{
                 type:User,
                 resolve:(parent ,args, {userId})=>{
+                    console.log(userId);
                     return userModel.getById(userId)
                 }
         }
@@ -118,10 +121,7 @@ const Mutation = new GraphQLObjectType({
                     id: {
                         type: new GraphQLNonNull(GraphQLInt)
                     },
-                    login: {
-                        type: new GraphQLNonNull(GraphQLString)
-                    },
-                    password: {
+                    name: {
                         type: new GraphQLNonNull(GraphQLString)
                     }
                 },
@@ -129,8 +129,7 @@ const Mutation = new GraphQLObjectType({
                     console.log(args, root);
                     return userModel.updateUser({
                         id: args.id,
-                        login: args.login,
-                        password: args.password
+                        name: args.name,
                     })
                 }
             },
