@@ -11,32 +11,6 @@ const {
 const UserModel = require('./model')
 
 var userModel = new UserModel();
-const User = new GraphQLObjectType({
-    name: 'User',
-    description: 'this graphql of user',
-    fields: () => ({
-        id: {
-            type: GraphQLInt,
-            resolve: (user) => {
-                return user.id;
-            }
-        },
-        name: {
-            type: GraphQLString,
-            resolve: (user) => {
-                return user.name;
-            }
-        },
-        stories:{
-            type: new GraphQLList(Story),
-            resolve:(parent,args)=>{
-                console.log('step User123');
-                return userModel.getAllStory(parent.id);
-            }
-        }
-
-    })
-})
 
 const Story = new GraphQLObjectType({
     name: 'Story',
@@ -48,110 +22,71 @@ const Story = new GraphQLObjectType({
             type: GraphQLString
         },
         author:{
-            type:User
+            type:User,
+            resolve:(story,args)=>{
+                console.log(story.author);
+                return userModel.getById(story.author)
+            }
         }
     })
 });
+
+const User = new GraphQLObjectType({
+    name:'User',
+    description:'',
+    fields:{
+        id:{
+            type:GraphQLInt
+        },
+        name:{
+            type:GraphQLString,
+            resolve:(user,args)=>{
+                return user.name;
+            }
+        },
+        stories:{
+            type: new GraphQLList(Story),
+            resolve:(user)=>{
+                return userModel.getStoryByUser(user.id);
+            }
+        }
+    }
+})
+
+
 const Query = new GraphQLObjectType({
     name: 'Query',
-    description: 'Root query Object',
+    description:'',
     fields: () => {
         return {
-            userlist: {
-                type: new GraphQLList(User),
-                args: {
-                    limit: {
-                        type: new GraphQLNonNull(GraphQLInt)
-                    },
-                    id: {
-                        type: GraphQLInt
-                    },
-                    name: {
-                        type: GraphQLString
-                    }
-                },
-                resolve: (root, args) => {
-                    return userModel.findAll(args);
-                }
-            },
             user:{
                 type: User,
                 args:{
                     id:{
-                        type: new GraphQLNonNull(GraphQLID)
+                        type: GraphQLInt
                     }
                 },
-                resolve: (parent,{id})=>{
-                    console.log('step user');
-                    return userModel.getById(id);
+                resolve: (parent,args)=>{
+                    return userModel.getById(args.id);
                 }
             },
-            viewer :{
-                type:User,
-                resolve:(parent ,args, {userId})=>{
-                    console.log(userId);
-                    return userModel.getById(userId)
+            userList:{
+                type: GraphQLList(User),
+                args:{
+                    name: {
+                        type:GraphQLString
+                    }
+                },
+                resolve: (source,args)=>{
+                    console.log(args);
+                    return userModel.findAll();
                 }
-        }
+            }
         }}
 })
 
-const Mutation = new GraphQLObjectType({
-    name: 'Mutation',
-    description: 'Function to set stuff',
-    fields() {
-        return {
-            addUser: {
-                type: User,
-                args: {
-                    name: {
-                        type: new GraphQLNonNull(GraphQLString)
-                    }
-                },
-                resolve: (root, args) => {
-                    console.log(args, root);
-                    return userModel.addUser({
-                        name: name
-                    })
-                }
-            },
-            updateUser: {
-                type: User,
-                args: {
-                    id: {
-                        type: new GraphQLNonNull(GraphQLInt)
-                    },
-                    name: {
-                        type: new GraphQLNonNull(GraphQLString)
-                    }
-                },
-                resolve: (root, args) => {
-                    console.log(args, root);
-                    return userModel.updateUser({
-                        id: args.id,
-                        name: args.name,
-                    })
-                }
-            },
-            deleteUser: {
-                type: GraphQLInt,
-                args: {
-                    id: {
-                        type: new GraphQLNonNull(GraphQLInt)
-                    }
-                },
-                resolve: (root, args) => {
-                    return userModel.deleteUser(args.id)
-                }
-            }
-        }
-    }
-
-})
-
 const Schema = new GraphQLSchema({
-    query: Query,
-    mutation: Mutation
-});
+    query: Query
+})
 
 module.exports = Schema;

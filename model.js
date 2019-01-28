@@ -2,10 +2,9 @@ const db = require('./db-connect');
 
 class User {
     constructor(){}
-    findAll(args){
-        let {limit} = args
+    findAll(args){        
         return new Promise((resolve,reject)=>{
-            db('User').select("*").limit(limit)
+            db('User').select("*")
                 .then(res => resolve(res))
                 .catch(err => reject(err))
         })
@@ -40,7 +39,7 @@ class User {
         })
     }
 
-    getAllStory(id){
+    getStoryByUser(id){
         return new Promise((resolve,reject)=>{
             db('Story').select("*").where('author',id)
                 .then(res=>resolve(res))

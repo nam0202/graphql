@@ -1,42 +1,142 @@
--response trả về luôn cùng dạng vs query truyền lên
--Có thể chỉnh sửa result
--Có thể query theo quan hệ 1-n tự động
+const User = new GraphQLObjectType({
+    name: 'User',
+    description: 'this graphql of user',
+    fields: () => ({
+        id: {
+            type: GraphQLInt,
+            resolve: (user) => {
+                return user.id;
+            }
+        },
+        name: {
+            type: GraphQLString,
+            resolve: (user) => {
+                return user.name;
+            }
+        },
+        stories:{
+            type: new GraphQLList(Story),
+            resolve:(parent,args)=>{
+                console.log('step User123');
+                return userModel.getAllStory(parent.id);
+            }
+        }
 
--Query 1-1 vs 1-n giống nhau. Nhận biết dựa vào schema
+    })
+})
 
--Có thể truyền tham số:
-	+ get dữ liệu thay vì truyền trên parameters
-	+ có thể định nghĩa luôn kiểu dữ liệu trả về dựa vào tham số
-Query			  Response
-{ 			  {
-  human(id: "1000") {	    "data":{
-    name			"human":{
-    height(unit: FOOT)	           "name": "Luke "
-  }				   "height":5.64
-}				}
-			    }
-			   }
--Kiểu dữ liệu sẽ đc lấy trong 1 bảng dữ liệu tự định nghĩa Graphql có 1 vài kiểu mặc định.
+const Story = new GraphQLObjectType({
+    name: 'Story',
+    fields: ()=>({
+        id:{
+            type: GraphQLID
+        },
+        text:{
+            type: GraphQLString
+        },
+        author:{
+            type:User
+        }
+    })
+});
+const Query = new GraphQLObjectType({
+    name: 'Query',
+    description: 'Root query Object',
+    fields: () => {
+        return {
+            userlist: {
+                type: new GraphQLList(User),
+                args: {
+                    limit: {
+                        type: new GraphQLNonNull(GraphQLInt)
+                    },
+                    id: {
+                        type: GraphQLInt
+                    },
+                    name: {
+                        type: GraphQLString
+                    }
+                },
+                resolve: (root, args) => {
+                    return userModel.findAll(args);
+                }
+            },
+            user:{
+                type: User,
+                args:{
+                    id:{
+                        type: new GraphQLNonNull(GraphQLID)
+                    }
+                },
+                resolve: (parent,{id})=>{
+                    console.log('step user');
+                    return userModel.getById(id);
+                }
+            },
+            viewer :{
+                type:User,
+                resolve:(parent ,args, {userId})=>{
+                    console.log(userId);
+                    return userModel.getById(userId)
+                }
+        }
+        }}
+})
 
--Có thể dổi tên kết quả trả về dựa vào bí danh
-***Fragments???
+const Mutation = new GraphQLObjectType({
+    name: 'Mutation',
+    description: 'Function to set stuff',
+    fields() {
+        return {
+            addUser: {
+                type: User,
+                args: {
+                    name: {
+                        type: new GraphQLNonNull(GraphQLString)
+                    }
+                },
+                resolve: (root, args) => {
+                    console.log(args, root);
+                    return userModel.addUser({
+                        name: name
+                    })
+                }
+            },
+            updateUser: {
+                type: User,
+                args: {
+                    id: {
+                        type: new GraphQLNonNull(GraphQLInt)
+                    },
+                    name: {
+                        type: new GraphQLNonNull(GraphQLString)
+                    }
+                },
+                resolve: (root, args) => {
+                    console.log(args, root);
+                    return userModel.updateUser({
+                        id: args.id,
+                        name: args.name,
+                    })
+                }
+            },
+            deleteUser: {
+                type: GraphQLInt,
+                args: {
+                    id: {
+                        type: new GraphQLNonNull(GraphQLInt)
+                    }
+                },
+                resolve: (root, args) => {
+                    return userModel.deleteUser(args.id)
+                }
+            }
+        }
+    }
 
-Phân trang dựa vào biến truyền trong fragments
-https://graphql.github.io/learn/queries/#using-variables-inside-fragments
+})
 
---- Đặt tên hàm cho rõ nghĩa.
----Sử dụng biến trong query:
-1. dùng $tenBien 
-2. Khai báo tên biến trong scope của query
-3. Sử dụng biến thường dùng JSON để định nghĩa
-
-Biến cùng kiểu dữ liệu với server
-Có thể sử dụng if else
-https://graphql.github.io/learn/queries/#directives
-
-1 vài từ khóa đặc biệt
-https://graphql.github.io/learn/queries/#meta-fields
-
-Giống như 1 ORM cần có schema để định hình các Cấu Trúc
-
--graphql là 1 ngôn ngữ truy vấn khác vs REST chỉ call lên 1 url
+const Schema = new GraphQLSchema({
+    query: Query,
+    mutation: Mutation
+});
